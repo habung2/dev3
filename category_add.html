@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>환자 등록</title>
+    <link rel="shortcut icon" type="images/x-icon" href="./res/images/favicon.ico">
+    <link rel="stylesheet" href="./res/css/style.css">
+    <link rel="stylesheet" href="./res/css/common.css">
+    <script src="./res/js/jquery/jquery-3.3.1.js"></script>
+
+<style>
+#header{width:100%;height:80px;background:#24303e;}
+#container{position:fixed;top:80px;padding:30px 30px;width:100%;height:calc(100% - 80px);background:#f4f4f4;overflow-y:auto}
+.label{display:inline-block;width:130px;height:25px;vertical-align:top;margin-bottom:10px;font-family :'NotoSansKo-Light';font-weight:bold;}
+.lb_s{height:25px;vertical-align:super}
+.input_h{padding:0 10px;height:25px;background:#f6f6f6;border:1px solid #dcdcdc;border-radius:3px}
+.pbt{width:200px;height:40px;font-family :'NotoSansKo-Medium';font-size:17px;cursor:pointer} 
+.vt_line{border:1px solid #ededed;margin:0 0 10px 0}
+</style>
+</head>
+<body>
+<input type="hidden" id="csrfp_token" value="666ec36df1"/>
+<div id="wrap">
+	<div class="overlay">
+    	<img src="./res/images/rolling.svg" />
+	</div> 
+	<div id="header">
+		<div id ="title" style="text-align:center;line-height:2.5;font-size:30px;color:white">설문 등록</div>
+	</div>
+	
+	<div id="container">
+		<div>
+			<label class="label">제목</label><input class="input_h" type="text" id="name" maxlength="128"/>
+		</div>
+		<hr class="vt_line">
+		<div class="mb_20">
+			<label class="label">유형</label><input class="input_h" type="radio" name="radio_type" value="0" checked/><label class="lb_s">설문</label><input class="input_h" type="radio" name="radio_type" value="1" style="margin-left:10px"/><label class="lb_s">진단</label>
+		</div>
+		<div class="ta_c">
+			<button id="btn_add" class="btn_red pbt" style="margin-right:20px">등록</button><button id="btn_close" class="btn_black pbt">닫기</button>
+		</div>
+	</div>
+	
+	<div id="footer"></div>
+</div>
+
+</body>
+</html>
+
+<script>
+var userData;
+$(document).ready(function(){
+	setEvent();
+	userData = JSON.parse(sessionStorage.getItem('userData'));
+});
+
+function setEvent(){
+	$("#btn_add").click(function(){
+		addCategory();
+	});
+	
+	$("#btn_close").click(function(){
+		window.open('about:blank','_self').self.close();
+	});
+}
+
+
+function addCategory(){
+	var categoryName = $("#name").val();
+    if (categoryName == "") {
+        alert("설문 이름을 입력하세요");
+        return;
+    }
+    var date = new Date();
+    var year = date.getFullYear();
+    var month = makeFormat(date.getMonth()+1);
+    var todate = makeFormat(date.getDate());
+    var hours = makeFormat(date.getHours());
+    var minutes = makeFormat(date.getMinutes());
+    var seconds = makeFormat(date.getSeconds());
+    var categoryId = "cat_"+year+""+month+""+todate+""+hours+""+minutes+""+seconds;
+   
+    var data = {
+        use: "INSERT_CATEGORY",
+        category_id: categoryId,
+        category_name: categoryName,
+        user_id: userData["m_user_id"],
+        type: $("input[name='radio_type']:checked").val(),
+        csrfp_token : $("#csrfp_token").val()
+    };
+
+    $.ajax({
+        type: 'POST',
+        url: './res/php/survey_handler.php',
+        data: data,
+        success: function(response) {
+            switch(response) {
+                case "INSERT_OK":
+                	alert("새로운 설문이 등록되었습니다. 설문 문항을 입력해 주세요");
+                	opener.location.reload();
+            		window.open("", "_self", "");
+            		window.close();
+                    break;
+                case "INSERT_FAIL":
+                	alert("INSERT ERROR");
+                    break;
+                default:
+                    break;
+            }
+
+        },beforeSend:function(){
+            $(".overlay").show();
+        },complete:function(){
+        	$(".overlay").hide();
+        }
+    });
+}
+
+function makeFormat(dateData) {
+    return dateData>9 ? dateData:"0"+dateData;
+}
+</script>
